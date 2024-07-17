@@ -1,8 +1,9 @@
 import express from 'express';
 import http from 'http';
 import { Server as SocketIOServer } from 'socket.io';
-import dotenv from 'dotenv'
-dotenv.config()
+import dotenv from 'dotenv';
+dotenv.config();
+
 const app = express();
 const server = http.createServer(app);
 const io = new SocketIOServer(server);
@@ -14,9 +15,9 @@ let clients = {};
 io.on('connection', (socket) => {
   console.log('Nuevo cliente conectado:', socket.id);
 
-  socket.on('subscribe', (email) => {
-    clients[socket.id] = email;
-    console.log(`Cliente ${socket.id} suscrito con el correo: ${email}`);
+  socket.on('subscribe', (clientId) => {
+    clients[socket.id] = clientId;
+    console.log(`Cliente ${socket.id} suscrito con el ID: ${clientId}`);
   });
 
   socket.on('disconnect', () => {
@@ -25,11 +26,27 @@ io.on('connection', (socket) => {
   });
 
   socket.on('sendEvent', (eventData) => {
-    const { email, event } = eventData;
+    const { clientId, event } = eventData;
 
-    for (let clientId in clients) {
-      if (clients[clientId] === email) {
-        io.to(clientId).emit('receiveEvent', event);
+    for (let socketId in clients) {
+      if (clients[socketId] === clientId) {
+        io.to(socketId).emit('receiveEvent', event);
+      }
+    }
+  });
+
+  socket.on('personasDentro', (clientId) => {
+    for (let socketId in clients) {
+      if (clients[socketId] === clientId) {
+        io.to(socketId).emit('notificacion', { tipo: 'personasDentro', mensaje: true });
+      }
+    }
+  });
+
+  socket.on('personasFuera', (clientId) => {
+    for (let socketId in clients) {
+      if (clients[socketId] === clientId) {
+        io.to(socketId).emit('notificacion', { tipo: 'personasFuera', mensaje: true });
       }
     }
   });

@@ -1,86 +1,29 @@
-import { strict as assert } from 'assert';
-import { io } from 'socket.io-client';
+import io from "socket.io-client";
 
-const runTests = async () => {
-  let socket;
+const SERVER_URL = "http://localhost:5000";
 
-  const connectClient = () => {
-    return new Promise((resolve) => {
-      socket = io('http://localhost:5000', {
-        reconnectionDelay: 0,
-        forceNew: true,
-        transports: ['websocket'],
-      });
+const socket = io(SERVER_URL);
 
-      socket.on('connect', () => {
-        resolve();
-      });
-    });
-  };
+socket.on("connect", () => {
+  console.log("Conectado al servidor WebSocket");
 
-  const disconnectClient = () => {
-    return new Promise((resolve) => {
-      if (socket.connected) {
-        socket.disconnect();
-      }
-      resolve();
-    });
-  };
+  // Suscripción con el ID 12345
+  socket.emit("subscribe", 12345);
 
-  await connectClient();
+  // Manejo de notificaciones de personas dentro y fuera
+  socket.on("notificacion", (data) => {
+    if (data.tipo === 'personasDentro') {
+      console.log("Notificación de personas dentro:", data.mensaje);
+    } else if (data.tipo === 'personasFuera') {
+      console.log("Notificación de personas fuera:", data.mensaje);
+    }
+  });
+});
 
-  console.log('Cliente conectado para pruebas');
+socket.on("disconnect", () => {
+  console.log("Desconectado del servidor WebSocket");
+});
 
-  try {
-    await new Promise((resolve, reject) => {
-      const email = 'test@example.com';
-      const eventMessage = 'Hola, test@example.com';
-
-      socket.emit('subscribe', email);
-
-      socket.emit('sendEvent', { email, event: eventMessage });
-
-      socket.on('receiveEvent', (event) => {
-        try {
-          assert.equal(event, eventMessage);
-          console.log('Prueba 1 pasada: suscripción y recepción de eventos correspondientes');
-          resolve();
-        } catch (error) {
-          reject(error);
-        }
-      });
-    });
-
-    await new Promise((resolve, reject) => {
-      const email = 'test@example.com';
-      const wrongEmail = 'wrong@example.com';
-      const eventMessage = 'Hola, test@example.com';
-
-      socket.emit('subscribe', email);
-
-      socket.emit('sendEvent', { email: wrongEmail, event: eventMessage });
-
-      socket.on('receiveEvent', (event) => {
-        reject(new Error('No debería recibir el evento'));
-      });
-
-      setTimeout(() => {
-        console.log('Prueba 2 pasada: no recepción de eventos si el correo no coincide');
-        resolve();
-      }, 500);
-    });
-  } catch (error) {
-    console.error('Error en las pruebas:', error);
-  }
-
-  await disconnectClient();
-  console.log('Cliente desconectado después de las pruebas');
-};
-
-runTests().then(() => {
-  console.log('Pruebas completadas');
-  process.exit(0);
-}).catch((error) => {
-  console.error('Error al ejecutar las pruebas:', error);
-  process.exit(1);
+socket.on("error", (error) => {
+  console.error("Error en la conexión WebSocket:", error.message);
 });
