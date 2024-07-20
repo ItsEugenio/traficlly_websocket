@@ -20,8 +20,7 @@ let hours = [
   "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00",
   "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00", "23:00",
 ];
-let peopleCountsInside = Array(24).fill(0);
-let peopleCountsOutside = Array(24).fill(0);
+let peopleCounts = Array(24).fill(0);
 let lastResetDate = new Date().getDate(); // Guarda el día actual
 
 io.on('connection', (socket) => {
@@ -32,7 +31,7 @@ io.on('connection', (socket) => {
     console.log(`Cliente ${socket.id} suscrito con el ID: ${clientId}`);
     
     // Emitir las horas y personas actuales al cliente que se suscribe
-    io.to(socket.id).emit('notificacion', { tipo: 'actualizacion', horas: hours, personasDentro: peopleCountsInside, personasFuera: peopleCountsOutside });
+    io.to(socket.id).emit('notificacion', { tipo: 'actualizacion', horas: hours, personas: peopleCounts });
   });
 
   socket.on('disconnect', () => {
@@ -52,22 +51,20 @@ io.on('connection', (socket) => {
 
   socket.on('personasDentro', (clientId) => {
     const currentHour = new Date().getHours();
-    peopleCountsInside[currentHour] += 1;
+    peopleCounts[currentHour] += 1;
 
     for (let socketId in clients) {
       if (clients[socketId] === clientId) {
-        io.to(socketId).emit('notificacion', { tipo: 'personasDentro', horas: hours, personasDentro: peopleCountsInside, personasFuera: peopleCountsOutside });
+        io.to(socketId).emit('notificacion', { tipo: 'personasDentro', horas: hours, personas: peopleCounts });
       }
     }
   });
 
   socket.on('personasFuera', (clientId) => {
-    const currentHour = new Date().getHours();
-    peopleCountsOutside[currentHour] += 1;
-
+    // Implementa la lógica según necesidades si es necesario
     for (let socketId in clients) {
       if (clients[socketId] === clientId) {
-        io.to(socketId).emit('notificacion', { tipo: 'personasFuera', horas: hours, personasDentro: peopleCountsInside, personasFuera: peopleCountsOutside });
+        io.to(socketId).emit('notificacion', { tipo: 'personasFuera', horas: hours, personas: peopleCounts });
       }
     }
   });
@@ -77,9 +74,8 @@ io.on('connection', (socket) => {
 function checkAndResetPeopleCounts() {
   const currentDay = new Date().getDate();
   if (currentDay !== lastResetDate) {
-    // Reiniciar peopleCountsInside y peopleCountsOutside a ceros
-    peopleCountsInside = Array(24).fill(0);
-    peopleCountsOutside = Array(24).fill(0);
+    // Reiniciar peopleCounts a ceros y comenzar "00:00" con 0 personas
+    peopleCounts = Array(24).fill(0);
     lastResetDate = currentDay;
     console.log('Se ha reiniciado peopleCounts para un nuevo día.');
   }
