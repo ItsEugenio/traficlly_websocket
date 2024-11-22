@@ -9,9 +9,9 @@ const app = express();
 
 // Cargar el certificado SSL/TLS
 const sslOptions = {
-  key: fs.readFileSync(process.env.SSL_KEY_PATH), // Ruta al archivo .key
-  cert: fs.readFileSync(process.env.SSL_CERT_PATH), // Ruta al archivo .cert o .pem
-  ca: fs.readFileSync(process.env.SSL_CA_PATH), // Ruta al archivo CA si aplica
+  key: fs.readFileSync(ssl_certificate_key /etc/letsencrypt/live/traficws.zapto.org/privkey.pem), // Ruta al archivo .key
+  cert: fs.readFileSync(/etc/letsencrypt/live/traficws.zapto.org/fullchain.pem), // Ruta al archivo .cert o .pem
+ 
 };
 
 const server = https.createServer(sslOptions, app);
